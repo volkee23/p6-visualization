@@ -14,7 +14,7 @@ I follow the Martini Glass Structure approach and starts with an author-driven a
 2. Design Strategies - http://infosthetics.com/archives/2011/01/research_telling_stories_with_data.html
 3. Git Hub Commands - https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
 4. D3 Examples:
-  ..* http://bl.ocks.org/phoebebright/raw/3176159/
-  ..* http://stackoverflow.com/questions/22452112/nvd3-clear-svg-before-loading-new-chart
+..* http://bl.ocks.org/phoebebright/raw/3176159/
+..* http://stackoverflow.com/questions/22452112/nvd3-clear-svg-before-loading-new-chart
 5. Markdown Cheat Sheet - https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
   
