@@ -6,631 +6,711 @@
 </head>
 <script src="http://d3js.org/d3.v3.js"></script>
 <script>
-
-/*
-Name: draw
-Description: This function will be responsible for drawing the line chart using D3
-*/
-function draw(data) {
-
-    data.forEach(type);
-
-    // Initialize variables
-    var margin = {top: 20, right: 50, bottom: 30, left: 50},
-        width = 700 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom,
-        padding = 50;
-
-    var x = d3.time.scale()
-        //.range([0, width]);
-        .range([padding, width - padding]);
-
-    var y = d3.scale.linear()
-        //.range([height, 0]);
-        .range([height - padding, padding]);
-
-    var color = d3.scale.category10();
-
-    // Create the svg variable where line chart will be drawn
-    var svg = d3.select(".div_RootBody").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // Tooltip for legends
-    var tooltip = d3.select("body")
-        .append("div")
-        .style("position", "absolute")
-        .style("z-index", "10")
-        .style("visibility", "hidden")
-        .style("background", "rgb(255, 255, 255)")
-        .text("a simple tooltip");
-
-    var menuBody = d3.select(".td_BodyLeft");
-
-    var total_delay = 0;
-
     /*
-    * Function Name: updateCarrier
-    * Description: This function will be used to animate the page. Using the carrierObj, we'll filter
-    * the data by carrier and use this function to generate the data to be used to draw the line chart.
+    Name: draw
+    Description: This function will be responsible for drawing the line chart using D3
     */
-    function updateCarrier(carrierObj) {
+    function draw(data) {
 
-      // Initialize the key components of the carrierObj
-      carrierKey = carrierObj.carrier;
-      carrierName = carrierObj.carrierName;
+            data.forEach(type);
 
-      // Set the footer message to indicate what step we're in. 
-      d3.select(".div_Footer")
-          .text("Loading data for " + carrierName + " ...");
+            // Initialize variables
+            var margin = {
+                    top: 20,
+                    right: 50,
+                    bottom: 30,
+                    left: 50
+                },
+                width = 700 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom,
+                padding = 50;
 
-      // Update the header information with carrier name information
-      d3.select("#div_RootBody_Head")
-            .style("text-align", "left")
-            .style("font", "bold 1.2em Arial")
-            .text("Airline Flight By Causes Delay - " + carrierName);
+            var x = d3.time.scale()
+                //.range([0, width]);
+                .range([padding, width - padding]);
 
-      // Hide the tooltip
-      tooltip.style("visibility", "hidden");
+            var y = d3.scale.linear()
+                //.range([height, 0]);
+                .range([height - padding, padding]);
 
-      /* This function will be used to roll-up/group the data by "key". For this purpose, key can be:
-       *      year
-       *      year + carrier 
-       */     
-      function agg_year(leaves) {
-          //debugger
-          var total_delay = 0;
+            var color = d3.scale.category10();
 
-          var total_carrier_delay = d3.sum(leaves, function(d) {
-              return d['carrier_delay'];
-          });
+            // Create the svg variable where line chart will be drawn
+            var svg = d3.select(".div_RootBody").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-          var total_weather_delay = d3.sum(leaves, function(d) {
-              return d['weather_delay'];
-          });
+            // Tooltip for legends
+            var tooltip = d3.select("body")
+                .append("div")
+                .style("position", "absolute")
+                .style("z-index", "10")
+                .style("visibility", "hidden")
+                .style("background", "rgb(255, 255, 255)")
+                .text("a simple tooltip");
 
-          var total_nas_delay = d3.sum(leaves, function(d) {
-              return d['nas_delay'];
-          });
+            var menuBody = d3.select(".td_BodyLeft");
 
-          var total_security_delay = d3.sum(leaves, function(d) {
-              return d['security_delay'];
-          });
+            var total_delay = 0;
 
-          var total_late_aircraft_delay = d3.sum(leaves, function(d) {
-              return d['late_aircraft_delay'];
-          });
+            /*
+             * Function Name: updateCarrier
+             * Description: This function will be used to animate the page. Using the carrierObj, we'll filter
+             * the data by carrier and use this function to generate the data to be used to draw the line chart.
+             */
+            function updateCarrier(carrierObj) {
 
-          total_delay = total_carrier_delay + total_weather_delay +
-                total_nas_delay + total_security_delay + total_late_aircraft_delay;
+                    // Initialize the key components of the carrierObj
+                    carrierKey = carrierObj.carrier;
+                    carrierName = carrierObj.carrierName;
 
-          var carriers = d3.set();
+                    // Set the footer message to indicate what step we're in. 
+                    d3.select(".div_Footer")
+                        .text("Loading data for " + carrierName + " ...");
 
-          leaves.forEach(function(d) {
-              carriers.add(d['carrier']);
-          });
+                    // Update the header information with carrier name information
+                    d3.select("#div_RootBody_Head")
+                        .style("text-align", "left")
+                        .style("font", "bold 1.2em Arial")
+                        .text("Airline Flight By Causes Delay - " + carrierName);
 
-          return {
-            'carrier_delay' : total_carrier_delay,
-            'weather_delay' : total_weather_delay,
-            'nas_delay' : total_nas_delay,
-            'security_delay' : total_security_delay,
-            'late_aircraft_delay' : total_late_aircraft_delay,
-            'carriers' : carriers.values(),
-            'total_delay' : total_delay
-          };
-      }
+                    // Hide the tooltip
+                    tooltip.style("visibility", "hidden");
 
-      // Clear old line charts
-      d3.selectAll('svg > g > *').remove();
+                    /* This function will be used to roll-up/group the data by "key". For this purpose, key can be:
+                     *      year
+                     *      year + carrier
+                     */
+                    function agg_year(leaves) {
+                        //debugger
+                        var total_delay = 0;
 
-      var nested = null;
-      var delay_types = [];
-
-      if (carrierKey === "All") {
-          nested = d3.nest()
-                        .key(function(d) {
-                            return d.year;
-                        })
-                        .rollup(agg_year)
-                        .entries(data);
-          color.domain(d3.keys(nested[0].values).filter(function(key) { return (key !== "carriers"); }));
-
-          nested.forEach(function(d) {
-            d.year = d.key;
-          });
-
-          var delay_types = color.domain().map(function(name) {
-            return {
-              name: name,
-              values: nested.map(function(d) {
-                return {year: d.key, delay: +d.values[name], carrier: d.values['carriers'], total_delay: d.values['total_delay']};
-              })
-            };
-          });
-
-      } else {
-          data_filtered = data.filter(function(d) { return d.carrier  == carrierKey;});
-          nested = d3.nest()
-                        .key(function(d) {
-                            return d.year;
-                        })
-                        .key(function(d) {
-                            return d.carrier;
-                        })
-                        .rollup(agg_year)
-                        .entries(data_filtered);
-
-          if (!isEmpty(nested)) {
-            color.domain(d3.keys(nested[0].values[0].values).filter(function(key) { return (key !== "carriers"); }));
-
-            nested.forEach(function(d) {
-              d.year = d.key;
-            });
-
-            var delay_types = color.domain().map(function(name) {
-              return {
-                name: name,
-                values: nested.map(function(d) {
-                  return {year: d.key, delay: +d.values[0].values[name], carrier: d.values[0].values['carriers'], total_delay: d.values[0].values['total_delay']};
-                })
-              };
-            });
-          }
-      }
-
-      // If Empty, skip the rest of the process
-      if (isEmpty(delay_types)) {
-          svg.append("text")
-            .attr("text-anchor", "middle")  
-            .attr("transform", "translate("+ (width/2) +","+(height/2)+")")  
-            .style("font", "bold 5em Arial")
-            .text("No Data Found");
-
-        return;
-      }
-
-      d3.select(".div_Footer")
-          .text("Drawing data for " + carrierName + " ...");
-
-      // get the max and min for x axis
-      x.domain([
-          d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return new Date(v.year) ; }); }),
-          d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return new Date(v.year) ; }); })
-      ]);
-
-      // get the max and min for y axis
-      y.domain([
-          d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return v.delay / v.total_delay * 100; }); }),
-          d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return v.delay / v.total_delay * 100; }); })
-      ]);
-
-      /* Create a legend variable that will show what color is for which type of data:
-       *            Carrier Delay - red
-       *            Weather Delay - lime
-       *            NAS Delay - blue
-       *            Security Delay - aqua
-       *            Late Aircraft Delay - orange
-       */ 
-
-      var legendDataDict = [
-          {delayType: "Carrier Delay", toolTip:"The cause of the cancellation or delay was due to circumstances within the airline's control (e.g. maintenance or crew problems, aircraft cleaning, baggage loading, fueling, etc.)."},
-          {delayType: "Weather Delay", toolTip:"Significant meteorological conditions (actual or forecasted) that, in the judgment of the carrier, delays or prevents the operation of a flight such as tornado, blizzard or hurricane." },
-          {delayType: "NAS Delay", toolTip:"National Aviation System: Delays and cancellations attributable to the national aviation system that refer to a broad set of conditions, such as non-extreme weather conditions, airport operations, heavy traffic volume, and air traffic control." },
-          {delayType: "Security Delay", toolTip:"Delays or cancellations caused by evacuation of a terminal or concourse, re-boarding of aircraft because of security breach, inoperative screening equipment and/or long lines in excess of 29 minutes at screening areas." },
-          {delayType: "Late Aircraft Delay", toolTip:"A previous flight with same aircraft arrived late, causing the present flight to depart late." }
-          ];
-
-      var legend = svg.append("g")
-              .attr("class", "legend")
-              .attr("transform", "translate(" + (width - 80) + "," + 0 + ")")
-              .selectAll("g")
-              .data(legendDataDict)
-              .enter().append("g");
-
-      legend.append("circle")
-          .attr("cy", function(d, i) {
-              return i * 20;
-          })
-          .attr("r", function(d) {
-                  return 3;
-          })
-          .attr("fill", function(d) {
-              if (d.delayType == "Carrier Delay") {
-                  return "rgb(255,0,000)"; // red
-              } else if (d.delayType == "Weather Delay") {
-                return "rgb(0,255,0)"; // lime
-              } else if (d.delayType == "NAS Delay") {
-                return "rgb(000,0,255)"; // blue
-              } else if (d.delayType == "Security Delay") {
-                return "rgb(000,255,255)";
-              } else if (d.delayType == "Late Aircraft Delay") {
-                return "rgb(255,153,0)";
-              }              
-          });
-
-      legend.append("text")
-          .attr("y", function(d, i) {
-              return i * 20 + 5;
-          })
-          .attr("x", 3 * 5)
-          .text(function(d) {
-              return d.delayType;
-          })
-          .on("mouseover", function(d){tooltip.text(d.toolTip); return tooltip.style("visibility", "visible").style("font", "normal 0.7em Arial");})
-          .on("mousemove", function(d){return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
-          .on("mouseout", function(d){tooltip.text(""); return tooltip.style("visibility", "hidden");})
-          ;
-
-
-      // Create the X axis variable 
-      var xAxis = d3.svg.axis()
-          .scale(x)
-          .ticks(5)
-          .innerTickSize(5)
-          .outerTickSize(0)
-          .orient("bottom")
-          .tickFormat(d3.time.format("%Y"));
-
-      // Create the Y axis variable
-      var yAxis = d3.svg.axis()
-          .scale(y)
-          .tickFormat(function(d) { return d + "%";})
-          .ticks(5)
-          .innerTickSize(15)
-          .outerTickSize(0)
-          .orient("left");
-
-      var line = d3.svg.line()
-          .interpolate("basis")
-          .x(function(d) { return x(new Date(d.year)); })
-          .y(function(d) { return y((d.delay / d.total_delay) * 100); });
-
-
-      // Display the X Axis
-      svg.append("g")
-            .attr("class", "x axis")
-            //.attr("transform", "translate(0," + height + ")")
-            .attr("transform", "translate(0," + (height - padding) + ")")
-            //.call(d3.axisBottom(x));
-            .call(xAxis);
-
-      // Display the Y Axis
-      svg.append("g")
-            .attr("class", "y axis")
-            .attr("transform", "translate("+padding+",0)")
-            .call(yAxis);
-
-      svg.append("line")
-              .attr(
-              {
-                  "class":"horizontalGrid",
-                  "x1" : padding,
-                  "x2" : width,
-                  "y1" : y(0),
-                  "y2" : y(0),
-                  "fill" : "none",
-                  "shape-rendering" : "crispEdges",
-                  "stroke" : "black",
-                  "stroke-width" : "1px"
-              });
-
-      // now add titles to the axes
-      svg.append("text")
-          .attr("text-anchor", "middle") 
-          .attr("transform", "translate("+ -10 +","+(height/2)+")rotate(-90)")  
-          .style("font", "bold 1em Arial")
-          .text("% of Total Delay Minutes");
-
-      svg.append("text")
-          .attr("text-anchor", "middle")  
-          .attr("transform", "translate("+ (width/2) +","+(height-(padding/3))+")")  
-          .style("font", "bold 1em Arial")
-          .text("Delay Year");
-
-
-      var delayType = svg.selectAll(".delayType")
-            .data(delay_types)
-            .enter().append("g")
-            .attr("class", "delayType");
-
-      var path = svg.selectAll(".delayType").append("path")
-            .attr("class", "line")
-            .attr("d", function(d) { if (d.name === "carrier_delay" || d.name === "weather_delay" || 
-               d.name === "nas_delay" || d.name === "security_delay" || d.name === "late_aircraft_delay") { return line(d.values);} })
-            //.style("stroke", function(d) { return z(d.name); });
-            .style("stroke", function(d) { if (d.name == "carrier_delay") 
-                                              {return "rgb(255,0,000)"} // red
-                                            else if (d.name == "weather_delay")
-                                              {return "rgb(0,255,0)"} // lime
-                                            else if (d.name == "nas_delay")
-                                              {return "rgb(000,0,255)"} // blue
-                                            else if (d.name == "security_delay")
-                                              {return "rgb(000,255,255)"} // aqua
-                                            else if (d.name == "late_aircraft_delay")
-                                              {return "rgb(255,153,0)"} // orange
-                                            else {return "#000";} // default
-                                               });
-
-      var totalLength = [path[0][0].getTotalLength(), path[0][1].getTotalLength()];
-
-      //console.log(totalLength);
-
-
-      d3.select(path[0][0])
-            .attr("stroke-dasharray", totalLength[0] + " " + totalLength[0] ) 
-            .attr("stroke-dashoffset", totalLength[0])
-            .transition()
-            .duration(3000)
-            .ease("linear")
-            .attr("stroke-dashoffset", 0);
-
-      d3.select(path[0][1])
-            .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1] )
-            .attr("stroke-dashoffset", totalLength[1])
-            .transition()
-            .duration(3000)
-            .ease("linear")
-            .attr("stroke-dashoffset", 0);
-
-    } // end of function updateCarrier
-
-    var origData = data;
-    var carrier_idx = 0;
-
-    menuBody.style("display", "none");
-
-    // Create a toggle button to switch from automated animation to user-driven navigation
-    var animateMapButton = d3.select(".div_AnimateButton").append('button').attr({  
-            class: "button",
-            id: "animateMap"})
-        .text("Animate the Delay Chart")
-        .style("font", "bold 1em Arial")
-        .style("display","block")
-        .style("margin"," 0 auto;")
-        .style("color", "green");
-
-    animateMapButton.on("click", toggleAnimating)
-
-    var animateTimer;
-    var isAnimating = false
-
-    toggleAnimating();
-
-    function toggleAnimating(){
-        if (isAnimating) {
-            clearInterval(animateTimer);
-            animateMapButton.text("Animate the Delay Chart").style("color", "green");
-            menuBody.style("display", "block");
-
-            var buttons = d3.select(".carrier_buttons")
-                        .selectAll("li")
-                        .data(carrierDataDict)
-                        .enter()
-                        .append("li")
-                        .text(function(d) {
-                          return d.carrierName;
+                        var total_carrier_delay = d3.sum(leaves, function(d) {
+                            return d['carrier_delay'];
                         });
 
-            buttons.on("click", function(d) {
-              d3.select(".carrier_buttons")
-                .selectAll("li")
-                .transition()
-                .duration(500)
-                //.style("background", "rgb(251, 201, 127)")
-                .style("background", "rgb(255, 255, 255)")
-                .style("color", "black");
+                        var total_weather_delay = d3.sum(leaves, function(d) {
+                            return d['weather_delay'];
+                        });
 
-              d3.select(this)
-                .transition()
-                .duration(500)
-                .style("background", "lightBlue")
-                .style("color", "white");
+                        var total_nas_delay = d3.sum(leaves, function(d) {
+                            return d['nas_delay'];
+                        });
 
-              updateCarrier(d);
-            })
+                        var total_security_delay = d3.sum(leaves, function(d) {
+                            return d['security_delay'];
+                        });
 
-        }
-        else {
+                        var total_late_aircraft_delay = d3.sum(leaves, function(d) {
+                            return d['late_aircraft_delay'];
+                        });
+
+                        total_delay = total_carrier_delay + total_weather_delay +
+                            total_nas_delay + total_security_delay + total_late_aircraft_delay;
+
+                        var carriers = d3.set();
+
+                        leaves.forEach(function(d) {
+                            carriers.add(d['carrier']);
+                        });
+
+                        return {
+                            'carrier_delay': total_carrier_delay,
+                            'weather_delay': total_weather_delay,
+                            'nas_delay': total_nas_delay,
+                            'security_delay': total_security_delay,
+                            'late_aircraft_delay': total_late_aircraft_delay,
+                            'carriers': carriers.values(),
+                            'total_delay': total_delay
+                        };
+                    }
+
+                    // Clear old line charts
+                    d3.selectAll('svg > g > *').remove();
+
+                    var nested = null;
+                    var delay_types = [];
+
+                    if (carrierKey === "All") {
+                        nested = d3.nest()
+                            .key(function(d) {
+                                return d.year;
+                            })
+                            .rollup(agg_year)
+                            .entries(data);
+                        color.domain(d3.keys(nested[0].values).filter(function(key) {
+                            return (key !== "carriers");
+                        }));
+
+                        nested.forEach(function(d) {
+                            d.year = d.key;
+                        });
+
+                        var delay_types = color.domain().map(function(name) {
+                            return {
+                                name: name,
+                                values: nested.map(function(d) {
+                                    return {
+                                        year: d.key,
+                                        delay: +d.values[name],
+                                        carrier: d.values['carriers'],
+                                        total_delay: d.values['total_delay']
+                                    };
+                                })
+                            };
+                        });
+
+                    } else {
+                        data_filtered = data.filter(function(d) {
+                            return d.carrier == carrierKey;
+                        });
+                        nested = d3.nest()
+                            .key(function(d) {
+                                return d.year;
+                            })
+                            .key(function(d) {
+                                return d.carrier;
+                            })
+                            .rollup(agg_year)
+                            .entries(data_filtered);
+
+                        if (!isEmpty(nested)) {
+                            color.domain(d3.keys(nested[0].values[0].values).filter(function(key) {
+                                return (key !== "carriers");
+                            }));
+
+                            nested.forEach(function(d) {
+                                d.year = d.key;
+                            });
+
+                            var delay_types = color.domain().map(function(name) {
+                                return {
+                                    name: name,
+                                    values: nested.map(function(d) {
+                                        return {
+                                            year: d.key,
+                                            delay: +d.values[0].values[name],
+                                            carrier: d.values[0].values['carriers'],
+                                            total_delay: d.values[0].values['total_delay']
+                                        };
+                                    })
+                                };
+                            });
+                        }
+                    }
+
+                    // If Empty, skip the rest of the process
+                    if (isEmpty(delay_types)) {
+                        svg.append("text")
+                            .attr("text-anchor", "middle")
+                            .attr("transform", "translate(" + (width / 2) + "," + (height / 2) + ")")
+                            .style("font", "bold 5em Arial")
+                            .text("No Data Found");
+
+                        return;
+                    }
+
+                    d3.select(".div_Footer")
+                        .text("Drawing data for " + carrierName + " ...");
+
+                    // get the max and min for x axis
+                    x.domain([
+                        d3.min(delay_types, function(c) {
+                            return d3.min(c.values, function(v) {
+                                return new Date(v.year);
+                            });
+                        }),
+                        d3.max(delay_types, function(c) {
+                            return d3.max(c.values, function(v) {
+                                return new Date(v.year);
+                            });
+                        })
+                    ]);
+
+                    // get the max and min for y axis
+                    y.domain([
+                        d3.min(delay_types, function(c) {
+                            return d3.min(c.values, function(v) {
+                                return v.delay / v.total_delay * 100;
+                            });
+                        }),
+                        d3.max(delay_types, function(c) {
+                            return d3.max(c.values, function(v) {
+                                return v.delay / v.total_delay * 100;
+                            });
+                        })
+                    ]);
+
+                    /* Create a legend variable that will show what color is for which type of data:
+                     *            Carrier Delay - red
+                     *            Weather Delay - lime
+                     *            NAS Delay - blue
+                     *            Security Delay - aqua
+                     *            Late Aircraft Delay - orange
+                     */
+
+                    var legendDataDict = [{
+                        delayType: "Carrier Delay",
+                        toolTip: "The cause of the cancellation or delay was due to circumstances within the airline's control (e.g. maintenance or crew problems, aircraft cleaning, baggage loading, fueling, etc.)."
+                    }, {
+                        delayType: "Weather Delay",
+                        toolTip: "Significant meteorological conditions (actual or forecasted) that, in the judgment of the carrier, delays or prevents the operation of a flight such as tornado, blizzard or hurricane."
+                    }, {
+                        delayType: "NAS Delay",
+                        toolTip: "National Aviation System: Delays and cancellations attributable to the national aviation system that refer to a broad set of conditions, such as non-extreme weather conditions, airport operations, heavy traffic volume, and air traffic control."
+                    }, {
+                        delayType: "Security Delay",
+                        toolTip: "Delays or cancellations caused by evacuation of a terminal or concourse, re-boarding of aircraft because of security breach, inoperative screening equipment and/or long lines in excess of 29 minutes at screening areas."
+                    }, {
+                        delayType: "Late Aircraft Delay",
+                        toolTip: "A previous flight with same aircraft arrived late, causing the present flight to depart late."
+                    }];
+
+                    var legend = svg.append("g")
+                        .attr("class", "legend")
+                        .attr("transform", "translate(" + (width - 80) + "," + 0 + ")")
+                        .selectAll("g")
+                        .data(legendDataDict)
+                        .enter().append("g");
+
+                    legend.append("circle")
+                        .attr("cy", function(d, i) {
+                            return i * 20;
+                        })
+                        .attr("r", function(d) {
+                            return 3;
+                        })
+                        .attr("fill", function(d) {
+                            if (d.delayType == "Carrier Delay") {
+                                return "rgb(255,0,000)"; // red
+                            } else if (d.delayType == "Weather Delay") {
+                                return "rgb(0,255,0)"; // lime
+                            } else if (d.delayType == "NAS Delay") {
+                                return "rgb(000,0,255)"; // blue
+                            } else if (d.delayType == "Security Delay") {
+                                return "rgb(000,255,255)";
+                            } else if (d.delayType == "Late Aircraft Delay") {
+                                return "rgb(255,153,0)";
+                            }
+                        });
+
+                    legend.append("text")
+                        .attr("y", function(d, i) {
+                            return i * 20 + 5;
+                        })
+                        .attr("x", 3 * 5)
+                        .text(function(d) {
+                            return d.delayType;
+                        })
+                        .on("mouseover", function(d) {
+                            tooltip.text(d.toolTip);
+                            return tooltip.style("visibility", "visible").style("font", "normal 0.7em Arial");
+                        })
+                        .on("mousemove", function(d) {
+                            return tooltip.style("top", (d3.event.pageY - 10) + "px").style("left", (d3.event.pageX + 10) + "px");
+                        })
+                        .on("mouseout", function(d) {
+                            tooltip.text("");
+                            return tooltip.style("visibility", "hidden");
+                        });
+
+
+                    // Create the X axis variable 
+                    var xAxis = d3.svg.axis()
+                        .scale(x)
+                        .ticks(5)
+                        .innerTickSize(5)
+                        .outerTickSize(0)
+                        .orient("bottom")
+                        .tickFormat(d3.time.format("%Y"));
+
+                    // Create the Y axis variable
+                    var yAxis = d3.svg.axis()
+                        .scale(y)
+                        .tickFormat(function(d) {
+                            return d + "%";
+                        })
+                        .ticks(5)
+                        .innerTickSize(15)
+                        .outerTickSize(0)
+                        .orient("left");
+
+                    var line = d3.svg.line()
+                        .interpolate("basis")
+                        .x(function(d) {
+                            return x(new Date(d.year));
+                        })
+                        .y(function(d) {
+                            return y((d.delay / d.total_delay) * 100);
+                        });
+
+
+                    // Display the X Axis
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        //.attr("transform", "translate(0," + height + ")")
+                        .attr("transform", "translate(0," + (height - padding) + ")")
+                        //.call(d3.axisBottom(x));
+                        .call(xAxis);
+
+                    // Display the Y Axis
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + padding + ",0)")
+                        .call(yAxis);
+
+                    svg.append("line")
+                        .attr({
+                            "class": "horizontalGrid",
+                            "x1": padding,
+                            "x2": width,
+                            "y1": y(0),
+                            "y2": y(0),
+                            "fill": "none",
+                            "shape-rendering": "crispEdges",
+                            "stroke": "black",
+                            "stroke-width": "1px"
+                        });
+
+                    // now add titles to the axes
+                    svg.append("text")
+                        .attr("text-anchor", "middle")
+                        .attr("transform", "translate(" + -10 + "," + (height / 2) + ")rotate(-90)")
+                        .style("font", "bold 1em Arial")
+                        .text("% of Total Delay Minutes");
+
+                    svg.append("text")
+                        .attr("text-anchor", "middle")
+                        .attr("transform", "translate(" + (width / 2) + "," + (height - (padding / 3)) + ")")
+                        .style("font", "bold 1em Arial")
+                        .text("Delay Year");
+
+
+                    var delayType = svg.selectAll(".delayType")
+                        .data(delay_types)
+                        .enter().append("g")
+                        .attr("class", "delayType");
+
+                    var path = svg.selectAll(".delayType").append("path")
+                        .attr("class", "line")
+                        .attr("d", function(d) {
+                            if (d.name === "carrier_delay" || d.name === "weather_delay" ||
+                                d.name === "nas_delay" || d.name === "security_delay" || d.name === "late_aircraft_delay") {
+                                return line(d.values);
+                            }
+                        })
+                        //.style("stroke", function(d) { return z(d.name); });
+                        .style("stroke", function(d) {
+                            if (d.name == "carrier_delay") {
+                                return "rgb(255,0,000)"
+                            } // red
+                            else if (d.name == "weather_delay") {
+                                return "rgb(0,255,0)"
+                            } // lime
+                            else if (d.name == "nas_delay") {
+                                return "rgb(000,0,255)"
+                            } // blue
+                            else if (d.name == "security_delay") {
+                                return "rgb(000,255,255)"
+                            } // aqua
+                            else if (d.name == "late_aircraft_delay") {
+                                return "rgb(255,153,0)"
+                            } // orange
+                            else {
+                                return "#000";
+                            } // default
+                        });
+
+                    var totalLength = [path[0][0].getTotalLength(), path[0][1].getTotalLength()];
+
+                    //console.log(totalLength);
+
+
+                    d3.select(path[0][0])
+                        .attr("stroke-dasharray", totalLength[0] + " " + totalLength[0])
+                        .attr("stroke-dashoffset", totalLength[0])
+                        .transition()
+                        .duration(3000)
+                        .ease("linear")
+                        .attr("stroke-dashoffset", 0);
+
+                    d3.select(path[0][1])
+                        .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1])
+                        .attr("stroke-dashoffset", totalLength[1])
+                        .transition()
+                        .duration(3000)
+                        .ease("linear")
+                        .attr("stroke-dashoffset", 0);
+
+                } // end of function updateCarrier
+
+            var origData = data;
+            var carrier_idx = 0;
+
             menuBody.style("display", "none");
 
-            animateMapButton.text("Stop the Animation").style("color", "red");
-            carrier_idx=0;                      
+            // Create a toggle button to switch from automated animation to user-driven navigation
+            var animateMapButton = d3.select(".div_AnimateButton").append('button').attr({
+                    class: "button",
+                    id: "animateMap"
+                })
+                .text("Animate the Delay Chart")
+                .style("font", "bold 1em Arial")
+                .style("display", "block")
+                .style("margin", " 0 auto;")
+                .style("color", "green");
 
-            animateTimer = setInterval(function(){
+            animateMapButton.on("click", toggleAnimating)
 
-                if(carrier_idx<carrierDataDict.length){
-                  data = origData;
-                  updateCarrier(carrierDataDict[carrier_idx]);
+            var animateTimer;
+            var isAnimating = false
 
-                  carrier_idx++;
+            toggleAnimating();
 
-                }
-                else{
-                    clearInterval(animateTimer)
-                }
-            },5000)
-        }
+            function toggleAnimating() {
+                if (isAnimating) {
+                    clearInterval(animateTimer);
+                    animateMapButton.text("Animate the Delay Chart").style("color", "green");
+                    menuBody.style("display", "block");
 
-        isAnimating = !isAnimating;
-    }
-   // Loop through the carrier index
-   /*
-    var carrier_idx = 0;
-
-    menuBody.style("display", "none");
-
-    var carrier_interval = setInterval(function() {
-        data = origData;
-        updateCarrier(carrierDataDict[carrier_idx]);
-
-          carrier_idx++;
-
-          if (carrier_idx >= carrierDataDict.length) {
-            clearInterval(carrier_interval);
-
-            menuBody.style("display", "block");
-
-            var buttons = d3.select(".carrier_buttons")
+                    var buttons = d3.select(".carrier_buttons")
                         .selectAll("li")
                         .data(carrierDataDict)
                         .enter()
                         .append("li")
                         .text(function(d) {
-                          return d.carrierName;
+                            return d.carrierName;
                         });
 
-            buttons.on("click", function(d) {
-              d3.select(".carrier_buttons")
-                .selectAll("li")
-                .transition()
-                .duration(500)
-                //.style("background", "rgb(251, 201, 127)")
-                .style("background", "rgb(255, 255, 255)")
-                .style("color", "black");
+                    buttons.on("click", function(d) {
+                        d3.select(".carrier_buttons")
+                            .selectAll("li")
+                            .transition()
+                            .duration(500)
+                            //.style("background", "rgb(251, 201, 127)")
+                            .style("background", "rgb(255, 255, 255)")
+                            .style("color", "black");
 
-              d3.select(this)
-                .transition()
-                .duration(500)
-                .style("background", "lightBlue")
-                .style("color", "white");
+                        d3.select(this)
+                            .transition()
+                            .duration(500)
+                            .style("background", "lightBlue")
+                            .style("color", "white");
 
-              updateCarrier(d);
-            })
-          }
-        }, 5000);
-  */
+                        updateCarrier(d);
+                    })
 
-} // end of function draw
+                } else {
+                    menuBody.style("display", "none");
 
-/*
- * Function Name: isEmpty
- * Description: Utility function that will check if parameter value is empty
- */
-function isEmpty(val){
-    return (val === undefined || val == null || val.length <= 0) ? true : false;        
-}
+                    animateMapButton.text("Stop the Animation").style("color", "red");
+                    carrier_idx = 0;
 
-/*
- * Function Name: type
- * Description: This will transform some of the data before using them for plotting the line chart
- */
-function type(d) {
+                    animateTimer = setInterval(function() {
 
-    // Parse dates and numbers. For numbers, set them to zero if empty/null
- 
-    d.year = parseDate(d['year'] + "-" + d['month'] + "-" + "01");
-    //d.year = d['year'];
-    if (isEmpty(d['carrier_delay'])) {
-      d['carrier_delay'] = 0;
-    } else {
-      d['carrier_delay'] = +d['carrier_delay'];
-    }
-    
-    if (isEmpty(d['weather_delay'])) {
-      d['weather_delay'] = 0;
-    } else {
-      d['weather_delay'] = +d['weather_delay'];
+                        if (carrier_idx < carrierDataDict.length) {
+                            data = origData;
+                            updateCarrier(carrierDataDict[carrier_idx]);
+
+                            carrier_idx++;
+
+                        } else {
+                            clearInterval(animateTimer)
+                        }
+                    }, 5000)
+                }
+
+                isAnimating = !isAnimating;
+            }
+        } // end of function draw
+
+    /*
+     * Function Name: isEmpty
+     * Description: Utility function that will check if parameter value is empty
+     */
+    function isEmpty(val) {
+        return (val === undefined || val == null || val.length <= 0) ? true : false;
     }
 
-    if (isEmpty(d['nas_delay'])) {
-      d['nas_delay'] = 0;
-    } else {
-      d['nas_delay'] = +d['nas_delay'];
+    /*
+     * Function Name: type
+     * Description: This will transform some of the data before using them for plotting the line chart
+     */
+    function type(d) {
+
+        // Parse dates and numbers. For numbers, set them to zero if empty/null
+
+        d.year = parseDate(d['year'] + "-" + d['month'] + "-" + "01");
+        //d.year = d['year'];
+        if (isEmpty(d['carrier_delay'])) {
+            d['carrier_delay'] = 0;
+        } else {
+            d['carrier_delay'] = +d['carrier_delay'];
+        }
+
+        if (isEmpty(d['weather_delay'])) {
+            d['weather_delay'] = 0;
+        } else {
+            d['weather_delay'] = +d['weather_delay'];
+        }
+
+        if (isEmpty(d['nas_delay'])) {
+            d['nas_delay'] = 0;
+        } else {
+            d['nas_delay'] = +d['nas_delay'];
+        }
+
+        if (isEmpty(d['security_delay'])) {
+            d['security_delay'] = 0;
+        } else {
+            d['security_delay'] = +d['security_delay'];
+        }
+        if (isEmpty(d['late_aircraft_delay'])) {
+            d['late_aircraft_delay'] = 0;
+        } else {
+            d['late_aircraft_delay'] = +d['late_aircraft_delay'];
+        }
+
+        return d;
     }
-
-    if (isEmpty(d['security_delay'])) {
-      d['security_delay'] = 0;
-    } else {
-      d['security_delay'] = +d['security_delay'];
-    }
-    if (isEmpty(d['late_aircraft_delay'])) {
-      d['late_aircraft_delay'] = 0;
-    } else {
-      d['late_aircraft_delay'] = +d['late_aircraft_delay'];
-    }
-
-    return d;
-}
-
-
-// Also filter to one symbol; the S&P 500.
-
 </script>
-  <body>
+<body>
 
-      <div>
-  <h1 style="text-align:center; font: bold 1.7em Arial;">Udacity Visualization Project</h1>
-      </div>
+    <div>
+        <h1 style="text-align:center; font: bold 1.7em Arial;">Udacity Visualization Project</h1>
+    </div>
 
-      <table class="table_Body">
+    <table class="table_Body">
         <tr>
-          <td class="td_BodyLeft">
-            <h2 class="h2_LeftMenuHeader">Select Airline</h2>
-            <div class="div_MenuBody" style="overflow-y: auto;">
-              <ul class="carrier_buttons">
-              </ul>
-            </div>
-          </td>
-          <td>
-            <div class="div_RootBody">
-              <h1 id="div_RootBody_Head" style="text-align:left; font: bold 1.2em Arial;">Airline Flight By Causes Delay</h1>
-            </div>
-          </td>
+            <td class="td_BodyLeft">
+                <h2 class="h2_LeftMenuHeader">Select Airline</h2>
+                <div class="div_MenuBody" style="overflow-y: auto;">
+                    <ul class="carrier_buttons">
+                    </ul>
+                </div>
+            </td>
+            <td>
+                <div class="div_RootBody">
+                    <h1 id="div_RootBody_Head" style="text-align:left; font: bold 1.2em Arial;">Airline Flight By Causes Delay</h1>
+                </div>
+            </td>
         </tr>
-      </table>
+    </table>
 
-      <div class="div_AnimateButton"> 
-      </div>
+    <div class="div_AnimateButton">
+    </div>
 
-      <div class="div_Footer"><p><p>Line chart data that summarizes delay causes for airlines</p></p></div>
+    <div class="div_Footer">
+        <p>
+            <p>Line chart data that summarizes delay causes for airlines</p>
+        </p>
+    </div>
 
-      <div><p class="p_ifMessage">This page was created by Oliver Ignacio using multiple inputs from everyone!</p></div>
+    <div>
+        <p class="p_ifMessage">This page was created by Oliver Ignacio using multiple inputs from everyone!</p>
+    </div>
 
-      <script type="text/javascript">
-
+    <script type="text/javascript">
         var parseDate = d3.time.format("%Y-%m-%d").parse;
 
-        var carrierDataDict = [
-          {carrier: "All", carrierName:"All Airlines"},
-          {carrier: "TZ", carrierName:"TA Airlines (TZ)" },
-          {carrier: "FL", carrierName:"AirTran Airways (FL)" },
-          {carrier: "AS", carrierName:"Alaska Airlines Inc. (AS)" },
-          {carrier: "AQ", carrierName:"Aloha Airlines Inc. (AQ)" },
-          {carrier: "HP", carrierName:"America West Airlines Inc. (HP)" },
-          {carrier: "AA", carrierName:"American Airlines Inc. (AA)" },
-          {carrier: "MQ", carrierName:"American Eagle Airlines Inc. (MQ)" },
-          {carrier: "DH", carrierName:"Atlantic Coast Airlines (DH)" },
-          {carrier: "EV", carrierName:"Atlantic Southeast Airlines (EV)" },
-          {carrier: "OH", carrierName:"Comair Inc. (OH)" },
-          {carrier: "CO", carrierName:"Continental Airlines Inc. (CO)" },
-          {carrier: "DL", carrierName:"Delta Airlines Inc. (DL)" },
-          {carrier: "9E", carrierName:"Endeavor Air Inc. (9E)" }, 
-          {carrier: "MQ", carrierName:"Envoy Air (MQ)" },
-          {carrier: "EV", carrierName:"ExpressJet Airlines Inc. (EV)" },
-          {carrier: "XE", carrierName:"ExpressJet Airlines Inc. (XE)" },
-          {carrier: "F9", carrierName:"Frontier Airlines Inc. (F9)" },
-          {carrier: "HA", carrierName:"Hawaiian Airlines Inc. (HA)" },
-          {carrier: "DH", carrierName:"Independence Air (DH)" }, 
-          {carrier: "B6", carrierName:"JetBlue Airways (B6)" },
-          {carrier: "YV", carrierName:"Mesa Airlines Inc. (YV)" },
-          {carrier: "NW", carrierName:"Northwest Airlines Inc. (NW)" },
-          {carrier: "9E", carrierName:"Pinnacle Airlines Inc. (9E)" },
-          {carrier: "OO", carrierName:"SkyWest Airlines Inc. (OO)" },
-          {carrier: "WN", carrierName:"Southwest Airlines Co. (WN)" },
-          {carrier: "NK", carrierName:"Spirit Airlines (NK)" },
-          {carrier: "US", carrierName:"US Airways Inc. (US)" },
-          {carrier: "UA", carrierName:"United Airlines Inc. (UA)" },
-          {carrier: "VX", carrierName:"Virgin America (VX)" }
-          ];
+        var carrierDataDict = [{
+            carrier: "All",
+            carrierName: "All Airlines"
+        }, {
+            carrier: "TZ",
+            carrierName: "TA Airlines (TZ)"
+        }, {
+            carrier: "FL",
+            carrierName: "AirTran Airways (FL)"
+        }, {
+            carrier: "AS",
+            carrierName: "Alaska Airlines Inc. (AS)"
+        }, {
+            carrier: "AQ",
+            carrierName: "Aloha Airlines Inc. (AQ)"
+        }, {
+            carrier: "HP",
+            carrierName: "America West Airlines Inc. (HP)"
+        }, {
+            carrier: "AA",
+            carrierName: "American Airlines Inc. (AA)"
+        }, {
+            carrier: "MQ",
+            carrierName: "American Eagle Airlines Inc. (MQ)"
+        }, {
+            carrier: "DH",
+            carrierName: "Atlantic Coast Airlines (DH)"
+        }, {
+            carrier: "EV",
+            carrierName: "Atlantic Southeast Airlines (EV)"
+        }, {
+            carrier: "OH",
+            carrierName: "Comair Inc. (OH)"
+        }, {
+            carrier: "CO",
+            carrierName: "Continental Airlines Inc. (CO)"
+        }, {
+            carrier: "DL",
+            carrierName: "Delta Airlines Inc. (DL)"
+        }, {
+            carrier: "9E",
+            carrierName: "Endeavor Air Inc. (9E)"
+        }, {
+            carrier: "MQ",
+            carrierName: "Envoy Air (MQ)"
+        }, {
+            carrier: "EV",
+            carrierName: "ExpressJet Airlines Inc. (EV)"
+        }, {
+            carrier: "XE",
+            carrierName: "ExpressJet Airlines Inc. (XE)"
+        }, {
+            carrier: "F9",
+            carrierName: "Frontier Airlines Inc. (F9)"
+        }, {
+            carrier: "HA",
+            carrierName: "Hawaiian Airlines Inc. (HA)"
+        }, {
+            carrier: "DH",
+            carrierName: "Independence Air (DH)"
+        }, {
+            carrier: "B6",
+            carrierName: "JetBlue Airways (B6)"
+        }, {
+            carrier: "YV",
+            carrierName: "Mesa Airlines Inc. (YV)"
+        }, {
+            carrier: "NW",
+            carrierName: "Northwest Airlines Inc. (NW)"
+        }, {
+            carrier: "9E",
+            carrierName: "Pinnacle Airlines Inc. (9E)"
+        }, {
+            carrier: "OO",
+            carrierName: "SkyWest Airlines Inc. (OO)"
+        }, {
+            carrier: "WN",
+            carrierName: "Southwest Airlines Co. (WN)"
+        }, {
+            carrier: "NK",
+            carrierName: "Spirit Airlines (NK)"
+        }, {
+            carrier: "US",
+            carrierName: "US Airways Inc. (US)"
+        }, {
+            carrier: "UA",
+            carrierName: "United Airlines Inc. (UA)"
+        }, {
+            carrier: "VX",
+            carrierName: "Virgin America (VX)"
+        }];
 
 
         d3.csv("airline_delay_causes_2010_2017.csv", draw);
+    </script>
 
-      </script>
-
-    </body>
+</body>
 
 </html>
