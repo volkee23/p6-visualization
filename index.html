@@ -99,8 +99,12 @@ function draw(data) {
               return d['security_delay'];
           });
 
+          var total_late_aircraft_delay = d3.sum(leaves, function(d) {
+              return d['late_aircraft_delay'];
+          });
+
           total_delay = total_carrier_delay + total_weather_delay +
-                total_nas_delay + total_security_delay;
+                total_nas_delay + total_security_delay + total_late_aircraft_delay;
 
           var carriers = d3.set();
 
@@ -113,6 +117,7 @@ function draw(data) {
             'weather_delay' : total_weather_delay,
             'nas_delay' : total_nas_delay,
             'security_delay' : total_security_delay,
+            'late_aircraft_delay' : total_late_aircraft_delay,
             'carriers' : carriers.values(),
             'total_delay' : total_delay
           };
@@ -207,13 +212,15 @@ function draw(data) {
        *            Weather Delay - lime
        *            NAS Delay - blue
        *            Security Delay - aqua
+       *            Late Aircraft Delay - orange
        */ 
 
       var legendDataDict = [
           {delayType: "Carrier Delay", toolTip:"The cause of the cancellation or delay was due to circumstances within the airline's control (e.g. maintenance or crew problems, aircraft cleaning, baggage loading, fueling, etc.)."},
           {delayType: "Weather Delay", toolTip:"Significant meteorological conditions (actual or forecasted) that, in the judgment of the carrier, delays or prevents the operation of a flight such as tornado, blizzard or hurricane." },
           {delayType: "NAS Delay", toolTip:"National Aviation System: Delays and cancellations attributable to the national aviation system that refer to a broad set of conditions, such as non-extreme weather conditions, airport operations, heavy traffic volume, and air traffic control." },
-          {delayType: "Security Delay", toolTip:"Delays or cancellations caused by evacuation of a terminal or concourse, re-boarding of aircraft because of security breach, inoperative screening equipment and/or long lines in excess of 29 minutes at screening areas." }
+          {delayType: "Security Delay", toolTip:"Delays or cancellations caused by evacuation of a terminal or concourse, re-boarding of aircraft because of security breach, inoperative screening equipment and/or long lines in excess of 29 minutes at screening areas." },
+          {delayType: "Late Aircraft Delay", toolTip:"A previous flight with same aircraft arrived late, causing the present flight to depart late." }
           ];
 
       var legend = svg.append("g")
@@ -239,6 +246,8 @@ function draw(data) {
                 return "rgb(000,0,255)"; // blue
               } else if (d.delayType == "Security Delay") {
                 return "rgb(000,255,255)";
+              } else if (d.delayType == "Late Aircraft Delay") {
+                return "rgb(255,153,0)";
               }              
           });
 
@@ -330,7 +339,7 @@ function draw(data) {
       var path = svg.selectAll(".delayType").append("path")
             .attr("class", "line")
             .attr("d", function(d) { if (d.name === "carrier_delay" || d.name === "weather_delay" || 
-               d.name === "nas_delay" || d.name === "security_delay") { return line(d.values);} })
+               d.name === "nas_delay" || d.name === "security_delay" || d.name === "late_aircraft_delay") { return line(d.values);} })
             //.style("stroke", function(d) { return z(d.name); });
             .style("stroke", function(d) { if (d.name == "carrier_delay") 
                                               {return "rgb(255,0,000)"} // red
@@ -340,6 +349,8 @@ function draw(data) {
                                               {return "rgb(000,0,255)"} // blue
                                             else if (d.name == "security_delay")
                                               {return "rgb(000,255,255)"} // aqua
+                                            else if (d.name == "late_aircraft_delay")
+                                              {return "rgb(255,153,0)"} // orange
                                             else {return "#000";} // default
                                                });
 
@@ -534,6 +545,11 @@ function type(d) {
       d['security_delay'] = 0;
     } else {
       d['security_delay'] = +d['security_delay'];
+    }
+    if (isEmpty(d['late_aircraft_delay'])) {
+      d['late_aircraft_delay'] = 0;
+    } else {
+      d['late_aircraft_delay'] = +d['late_aircraft_delay'];
     }
 
     return d;
