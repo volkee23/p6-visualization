@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 12px Helvetica;
+}
+
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.y.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+.pathWithBorder {
+  paint-order: stroke fill;
+  stroke-width: 1.8;
+  stroke: black;
+  fill: blue;
+}
+
+</style>
+<body>
+<form>
+  <label><input type="radio" name="carrier" value="All" checked> All</label>
+  <label><input type="radio" name="carrier" value="TZ" checked>TA Airlines (TZ)</label>
+  <label><input type="radio" name="carrier" value="FL" checked>AirTran Airways (FL)</label>
+  <label><input type="radio" name="carrier" value="AS" checked>Alaska Airlines Inc. (AS)</label>
+  <label><input type="radio" name="carrier" value="AQ" checked>Aloha Airlines Inc. (AQ)</label>
+  <label><input type="radio" name="carrier" value="HP" checked>America West Airlines Inc. (HP)</label>
+  <label><input type="radio" name="carrier" value="AA" checked>American Airlines Inc. (AA)</label>
+  <label><input type="radio" name="carrier" value="MQ" checked>American Eagle Airlines Inc. (MQ)</label>
+  <label><input type="radio" name="carrier" value="DH" checked>Atlantic Coast Airlines (DH)</label>
+  <label><input type="radio" name="carrier" value="EV" checked>Atlantic Southeast Airlines (EV)</label>
+  <label><input type="radio" name="carrier" value="OH" checked>Comair Inc. (OH)</label>
+  <label><input type="radio" name="carrier" value="CO" checked>Continental Airlines Inc. (CO)</label>
+  <label><input type="radio" name="carrier" value="DL" checked>Delta Airlines Inc. (DL)</label>
+  <label><input type="radio" name="carrier" value="9E" checked>Endeavor Air Inc. (9E)</label>
+  <label><input type="radio" name="carrier" value="MQ" checked>Envoy Air (MQ)</label>
+  <label><input type="radio" name="carrier" value="EV" checked>ExpressJet Airlines Inc. (EV)</label>
+  <label><input type="radio" name="carrier" value="XE" checked>ExpressJet Airlines Inc. (XE)</label>
+  <label><input type="radio" name="carrier" value="F9" checked>Frontier Airlines Inc. (F9)</label>
+  <label><input type="radio" name="carrier" value="HA" checked>Hawaiian Airlines Inc. (HA)</label>
+  <label><input type="radio" name="carrier" value="DH" checked>Independence Air (DH)</label>
+  <label><input type="radio" name="carrier" value="B6" checked>JetBlue Airways (B6)</label>
+  <label><input type="radio" name="carrier" value="YV" checked>Mesa Airlines Inc. (YV)</label>
+  <label><input type="radio" name="carrier" value="NW" checked>Northwest Airlines Inc. (NW)</label>
+  <label><input type="radio" name="carrier" value="9E" checked>Pinnacle Airlines Inc. (9E)</label>
+  <label><input type="radio" name="carrier" value="OO" checked>SkyWest Airlines Inc. (OO)</label>
+  <label><input type="radio" name="carrier" value="WN" checked>Southwest Airlines Co. (WN)</label>
+  <label><input type="radio" name="carrier" value="NK" checked>Spirit Airlines (NK)</label>
+  <label><input type="radio" name="carrier" value="US" checked>US Airways Inc. (US)</label>
+  <label><input type="radio" name="carrier" value="UA" checked>United Airlines Inc. (UA)</label>
+  <label><input type="radio" name="carrier" value="VX" checked>Virgin America (VX)</label></form>
+</form>
+
+<script src="http://d3js.org/d3.v3.js"></script>
+<script>
+
+var margin = {top: 20, right: 50, bottom: 30, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+//var parse = d3.time.format("%Y").parse;
+
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+
+//var x = d3.time.scale()
+var x = d3.time.scale()
+//var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+/*
+var x = d3.scaleTime().range([0, width]),
+    y = d3.scaleLinear().range([height, 0]),
+    z = d3.scaleOrdinal(d3.schemeCategory10);
+*/
+var color = d3.scale.category10();
+
+/*
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .tickSize(-height);
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .ticks(4)
+    .orient("right");
+**/
+
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var total_delay = 0;
+
+d3.csv("airline_delay_causes_2010_2017.csv", type, function(error, data) {
+  if (error) throw error;
+  debugger
+  function agg_year(leaves) {
+                //debugger
+                var total_delay = 0;
+
+                var total_carrier_delay = d3.sum(leaves, function(d) {
+                    return d['carrier_delay'];
+                });
+
+                var total_weather_delay = d3.sum(leaves, function(d) {
+                    return d['weather_delay'];
+                });
+
+                var total_nas_delay = d3.sum(leaves, function(d) {
+                    return d['nas_delay'];
+                });
+
+                var total_security_delay = d3.sum(leaves, function(d) {
+                    return d['security_delay'];
+                });
+
+                total_delay = total_carrier_delay + total_weather_delay +
+                      total_nas_delay + total_security_delay;
+
+                var carriers = d3.set();
+
+                leaves.forEach(function(d) {
+                    carriers.add(d['carrier']);
+                });
+
+                return {
+                  'carrier_delay' : total_carrier_delay,
+                  'weather_delay' : total_weather_delay,
+                  'nas_delay' : total_nas_delay,
+                  'security_delay' : total_security_delay,
+                  'carriers' : carriers.values(),
+                  'total_delay' : total_delay
+                };
+  }
+
+  var nested = d3.nest()
+                  .key(function(d) {
+//                      return new Date(d['year']).getUTCFullYear();
+                      return d.year;
+                  })
+                  .rollup(agg_year)
+                  .entries(data);
+
+  debugger
+
+//  color.domain(d3.keys(nested[0].values).filter(function(key) { return (key === "carrier_delay" || key === "weather_delay" || key === "nas_delay" || key === "security_delay"); }));
+  color.domain(d3.keys(nested[0].values).filter(function(key) { return (key !== "carriers"); }));
+
+  nested.forEach(function(d) {
+    d.year = d.key;
+  });
+
+  var delay_types = color.domain().map(function(name) {
+    return {
+      name: name,
+      values: nested.map(function(d) {
+        return {year: d.key, delay: +d.values[name], carrier: d.values['carriers'], total_delay: d.values['total_delay']};
+      })
+    };
+  });
+
+  debugger
+
+/*
+  var carrier_delay_max = d3.max(nested, function(d) {
+      return d.values['delay'];
+  });
+**/
+
+  //x.domain(d3.extent(nested, function(d) { return d.year; }));
+  x.domain([
+//    d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return v.delay; }); }),
+//    d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return v.delay; }); })
+    d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return new Date(v.year) ; }); }),
+    d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return new Date(v.year) ; }); })
+  ]);
+
+  y.domain([
+//    d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return v.delay; }); }),
+//    d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return v.delay; }); })
+    d3.min(delay_types, function(c) { return d3.min(c.values, function(v) { return v.delay / v.total_delay * 100; }); }),
+    d3.max(delay_types, function(c) { return d3.max(c.values, function(v) { return v.delay / v.total_delay * 100; }); })
+  ]);
+
+  //z.domain(delay_types.map(function(c) { return c.name; }));
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .ticks(5)
+    .innerTickSize(5)
+    .outerTickSize(0)
+    .orient("bottom")
+    //.tickFormat(function(d) { return d + "";});
+    //.tickFormat(function(d) { return new(d.values.year).getUTCFullYear(); });
+    .tickFormat(d3.time.format("%Y")); 
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .tickFormat(function(d) { return d + "%";})
+    .ticks(5)
+    .innerTickSize(15)
+    .outerTickSize(0)
+    .orient("left");
+
+var line = d3.svg.line()
+    .interpolate("basis")
+    //.curve(d3.curveBasis)
+    .x(function(d) { return x(new Date(d.year)); })
+    .y(function(d) { return y((d.delay / d.total_delay) * 100); });
+
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      //.call(d3.axisBottom(x));
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+
+  svg.append("line")
+        .attr(
+        {
+            "class":"horizontalGrid",
+            "x1" : 0,
+            "x2" : width,
+            "y1" : y(0),
+            "y2" : y(0),
+            "fill" : "none",
+            "shape-rendering" : "crispEdges",
+            "stroke" : "black",
+            "stroke-width" : "1px",
+            "stroke-dasharray": ("3, 3")
+        });
+        /*
+        .attr(
+        {
+            "class":"verticalGrid",
+            "x1" : x(0),
+            "x2" : x(0),
+            "y1" : 0,
+            "y2" : height,
+            "fill" : "none",
+            "shape-rendering" : "crispEdges",
+            "stroke" : "black",
+            "stroke-width" : "1px",
+            "stroke-dasharray": ("3, 3")
+        });
+*/
+
+
+  var delayType = svg.selectAll(".delayType")
+      .data(delay_types)
+    .enter().append("g")
+      .attr("class", "delayType");
+
+
+
+  var path = svg.selectAll(".delayType").append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { if (d.name === "carrier_delay" || d.name === "weather_delay" || d.name === "nas_delay" || d.name === "security_delay") { return line(d.values);} })
+      //.style("stroke", function(d) { return z(d.name); });
+      .style("stroke", function(d) { if (d.name == "carrier_delay") 
+                                        {return "rgb(255,0,000)"} // red
+                                      else if (d.name == "weather_delay")
+                                        {return "rgb(0,255,0)"} // lime
+                                      else if (d.name == "nas_delay")
+                                        {return "rgb(000,0,255)"} // blue
+                                      else if (d.name == "security_delay")
+                                        {return "rgb(000,255,255)"} // aqua
+                                      else {return "#000";} // default
+                                         });
+  /*
+  path.append("text")
+      .datum(function(d) { return {id: d.name, value: d.values[d.values.length - 1]}; })
+      .attr("transform", function(d) { return "translate(" + x(d.value.year) + "," + y(d.value.delay) + ")"; })
+      .attr("x", 3)
+      .attr("dy", "0.35em")
+      .style("font", "10px sans-serif")
+      .text(function(d) { return d.id; });
+  */
+ 
+
+  //var totalLength = path.node().getTotalLength();
+/*
+console.log(path);
+console.log(path.node());
+console.log(path[0][0]);
+console.log(path[0][1]);
+*/
+var totalLength = [path[0][0].getTotalLength(), path[0][1].getTotalLength()];
+
+console.log(totalLength);
+
+
+   d3.select(path[0][0])
+      .attr("stroke-dasharray", totalLength[0] + " " + totalLength[0] ) 
+      .attr("stroke-dashoffset", totalLength[0])
+      .transition()
+        .duration(5000)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0);
+
+   d3.select(path[0][1])
+      .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1] )
+      .attr("stroke-dashoffset", totalLength[1])
+      .transition()
+        .duration(5000)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0);
+
+});
+
+function isEmpty(val){
+    return (val === undefined || val == null || val.length <= 0) ? true : false;        
+}
+
+// Parse dates and numbers. We assume values are sorted by date.
+// Also filter to one symbol; the S&P 500.
+function type(d) {
+        d.year = parseDate(d['year'] + "-" + d['month'] + "-" + "01");
+        //d.year = d['year'];
+        if (isEmpty(d['carrier_delay'])) {
+          d['carrier_delay'] = 0;
+        } else {
+          d['carrier_delay'] = +d['carrier_delay'];
+        }
+        
+        if (isEmpty(d['weather_delay'])) {
+          d['weather_delay'] = 0;
+        } else {
+          d['weather_delay'] = +d['weather_delay'];
+        }
+
+        if (isEmpty(d['nas_delay'])) {
+          d['nas_delay'] = 0;
+        } else {
+          d['nas_delay'] = +d['nas_delay'];
+        }
+
+        if (isEmpty(d['security_delay'])) {
+          d['security_delay'] = 0;
+        } else {
+          d['security_delay'] = +d['security_delay'];
+        }
+
+        return d;
+}
+
+</script>
