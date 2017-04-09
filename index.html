@@ -66,6 +66,11 @@
                     carrierKey = carrierObj.carrier;
                     carrierName = carrierObj.carrierName;
 
+                    if (carrierKey !== "All") {
+                        d3.select(".info_findings")
+                          .text("");
+                    }
+
                     // Set the footer message to indicate what step we're in. 
                     d3.select(".div_Footer")
                         .text("Loading data for " + carrierName + " ...");
@@ -427,7 +432,6 @@
 
                     //console.log(totalLength);
 
-
                     d3.select(path[0][0])
                         .attr("stroke-dasharray", totalLength[0] + " " + totalLength[0])
                         .attr("stroke-dashoffset", totalLength[0])
@@ -444,7 +448,37 @@
                         .ease("linear")
                         .attr("stroke-dashoffset", 0);
 
+                    d3.select(path[0][2])
+                        .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1])
+                        .attr("stroke-dashoffset", totalLength[1])
+                        .transition()
+                        .duration(3000)
+                        .ease("linear")
+                        .attr("stroke-dashoffset", 0);
+
+                    d3.select(path[0][3])
+                        .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1])
+                        .attr("stroke-dashoffset", totalLength[1])
+                        .transition()
+                        .duration(3000)
+                        .ease("linear")
+                        .attr("stroke-dashoffset", 0);
+                    d3.select(path[0][4])
+                        .attr("stroke-dasharray", totalLength[1] + " " + totalLength[1])
+                        .attr("stroke-dashoffset", totalLength[1])
+                        .transition()
+                        .duration(3000)
+                        .ease("linear")
+                        .attr("stroke-dashoffset", 0);
+
                 } // end of function updateCarrier
+
+            d3.select(".info_findings")
+                .transition()
+                .duration(3000)
+                .style("text-align","left")
+                .style("font", "bold 1.7em Arial")
+                .text("Is your flight delayed? Don't blame the weather! Our findings show that late airfcraft delay beats weather and other causes for the most number of minutes delay in continental US flights from January 1, 2010 to January 1, 2017.");
 
             var origData = data;
             var carrier_idx = 0;
@@ -452,78 +486,52 @@
             menuBody.style("display", "none");
 
             // Create a toggle button to switch from automated animation to user-driven navigation
-            var animateMapButton = d3.select(".div_AnimateButton").append('button').attr({
-                    class: "button",
-                    id: "animateMap"
-                })
-                .text("Animate the Delay Chart")
-                .style("font", "bold 1em Arial")
-                .style("display", "block")
-                .style("margin", " 0 auto;")
-                .style("color", "green");
-
-            animateMapButton.on("click", toggleAnimating)
-
             var animateTimer;
-            var isAnimating = false
 
-            toggleAnimating();
+            menuBody.style("display", "none");
+            carrier_idx = 0;
 
-            function toggleAnimating() {
-                if (isAnimating) {
-                    clearInterval(animateTimer);
-                    animateMapButton.text("Animate the Delay Chart").style("color", "green");
-                    menuBody.style("display", "block");
+            animateTimer = setInterval(function() {
 
-                    var buttons = d3.select(".carrier_buttons")
-                        .selectAll("li")
-                        .data(carrierDataDict)
-                        .enter()
-                        .append("li")
-                        .text(function(d) {
-                            return d.carrierName;
-                        });
+                if (carrierDataDict[carrier_idx].carrier === "All") {
+                    data = origData;
+                    updateCarrier(carrierDataDict[carrier_idx]);
 
-                    buttons.on("click", function(d) {
-                        d3.select(".carrier_buttons")
-                            .selectAll("li")
-                            .transition()
-                            .duration(500)
-                            //.style("background", "rgb(251, 201, 127)")
-                            .style("background", "rgb(255, 255, 255)")
-                            .style("color", "black");
-
-                        d3.select(this)
-                            .transition()
-                            .duration(500)
-                            .style("background", "lightBlue")
-                            .style("color", "white");
-
-                        updateCarrier(d);
-                    })
+                    carrier_idx++;
 
                 } else {
-                    menuBody.style("display", "none");
-
-                    animateMapButton.text("Stop the Animation").style("color", "red");
-                    carrier_idx = 0;
-
-                    animateTimer = setInterval(function() {
-
-                        if (carrier_idx < carrierDataDict.length) {
-                            data = origData;
-                            updateCarrier(carrierDataDict[carrier_idx]);
-
-                            carrier_idx++;
-
-                        } else {
-                            clearInterval(animateTimer)
-                        }
-                    }, 5000)
+                    clearInterval(animateTimer)
                 }
+            }, 5000);
 
-                isAnimating = !isAnimating;
-            }
+            menuBody.style("display", "block");
+
+            var buttons = d3.select(".carrier_buttons")
+                .selectAll("li")
+                .data(carrierDataDict)
+                .enter()
+                .append("li")
+                .text(function(d) {
+                    return d.carrierName;
+                });
+
+            buttons.on("click", function(d) {
+                d3.select(".carrier_buttons")
+                    .selectAll("li")
+                    .transition()
+                    .duration(500)
+                    //.style("background", "rgb(251, 201, 127)")
+                    .style("background", "rgb(255, 255, 255)")
+                    .style("color", "black");
+
+                d3.select(this)
+                    .transition()
+                    .duration(500)
+                    .style("background", "lightBlue")
+                    .style("color", "white");
+
+                updateCarrier(d);
+            });
         } // end of function draw
 
     /*
@@ -594,6 +602,10 @@
             <td>
                 <div class="div_RootBody">
                     <h1 id="div_RootBody_Head" style="text-align:left; font: bold 1.2em Arial;">Airline Flight By Causes Delay</h1>
+                <p>
+                <p class="info_findings" style="text-align:left; font: bold 1.7em Arial;">
+                </p>
+                </p>
                 </div>
             </td>
         </tr>
@@ -619,29 +631,17 @@
             carrier: "All",
             carrierName: "All Airlines"
         }, {
-            carrier: "TZ",
-            carrierName: "TA Airlines (TZ)"
-        }, {
             carrier: "FL",
             carrierName: "AirTran Airways (FL)"
         }, {
             carrier: "AS",
             carrierName: "Alaska Airlines Inc. (AS)"
         }, {
-            carrier: "AQ",
-            carrierName: "Aloha Airlines Inc. (AQ)"
-        }, {
-            carrier: "HP",
-            carrierName: "America West Airlines Inc. (HP)"
-        }, {
             carrier: "AA",
             carrierName: "American Airlines Inc. (AA)"
         }, {
             carrier: "MQ",
             carrierName: "American Eagle Airlines Inc. (MQ)"
-        }, {
-            carrier: "DH",
-            carrierName: "Atlantic Coast Airlines (DH)"
         }, {
             carrier: "EV",
             carrierName: "Atlantic Southeast Airlines (EV)"
@@ -673,17 +673,11 @@
             carrier: "HA",
             carrierName: "Hawaiian Airlines Inc. (HA)"
         }, {
-            carrier: "DH",
-            carrierName: "Independence Air (DH)"
-        }, {
             carrier: "B6",
             carrierName: "JetBlue Airways (B6)"
         }, {
             carrier: "YV",
             carrierName: "Mesa Airlines Inc. (YV)"
-        }, {
-            carrier: "NW",
-            carrierName: "Northwest Airlines Inc. (NW)"
         }, {
             carrier: "9E",
             carrierName: "Pinnacle Airlines Inc. (9E)"
